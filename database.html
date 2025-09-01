@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSBP Database</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React Libraries -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <!-- Babel to compile JSX in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Firebase v9 compatibility libraries -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+    
+    <!-- PDF & Canvas Libraries for Label Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-area, .print-area * {
+                visibility: visible;
+            }
+            .print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 4in;
+                height: 3in;
+                padding: 0.25in;
+                border: 1px dashed black;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                font-size: 12pt;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- Helper Components ---
+        const QRCode = ({ text, size = 150 }) => {
+            if (!text) return null;
+            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}`;
+            return <img src={qrCodeUrl} alt="QR Code" className="mx-auto my-2" />;
+        };
+
+        const Spinner = () => (
+            <div className="flex justify-center items-center p-8">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-green-600"></div>
+            </div>
+        );
+
+        const Modal = ({ children, onClose }) => (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center no-print">
+                <div className="bg-white p-6 rounded-xl shadow-2xl max-w-lg w-full relative">
+                    <button onClick={onClose} className="absolute top-2 right-2 text-2xl font-bold text-gray-500 hover:text-gray-800">&times;</button>
+                    {children}
+                </div>
+            </div>
+        );
+
+        // --- Firebase Setup ---
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyDNjN33dhKt2CEpwCxDYHHpNs42rjOC6iU",
+            authDomain: "osbp-database.firebaseapp.com",
+            projectId: "osbp-database",
+            storageBucket: "osbp-database.firebasestorage.app",
+            messagingSenderId: "1003612110440",
+            appId: "1:1003612110440:web:8d55486ed00046ee7185dd",
+            measurementId: "G-WBQLT4J8GL"
+        };
+        
+        const firebaseApp = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+        const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp;
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'plant-breeding-app-v2';
+
+        // --- New Helper Function for Unique IDs ---
+        const generateUniqueId = async (collectionRef) => {
+            let id;
+            let docExists = true;
+            while (docExists) {
+                id = Math.random().toString(36).substring(2, 10).toUpperCase();
+                const docRef = collectionRef.doc(id);
+                const docSnap = await docRef.get();
+                docExists = docSnap.exists;
+            }
+            return id;
+        };
+        
+        // --- Main App Component ---
+        function App() {
+            const [user, setUser] = useState(null);
+            const [userData, setUserData] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [page, setPage] = useState({ name: 'dashboard', params: {} });
+
+            useEffect(() => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const plantId = urlParams.get('plantId');
+                const seedLotId = urlParams.get('seedLotId');
+                const fruitId = urlParams.get('fruitId');
+                let destination = null;
+
+                if (plantId) destination = { name: 'plantDetail', params: { plantId } };
+                else if (seedLotId) destination = { name: 'claimSeed', params: { seedLotId } };
+                else if (fruitId) destination = { name: 'fruitDetail', params: { fruitId } };
+
+                if (destination) {
+                    sessionStorage.setItem('redirectAfterLogin', JSON.stringify(destination));
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+
+                const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
+                    if (currentUser && !currentUser.isAnonymous) {
+                        const userDocRef = db.doc(`/artifacts/${appId}/users/${currentUser.uid}`);
+                        const userDocSnap = await userDocRef.get();
+                        if (userDocSnap.exists) {
+                            setUserData({ uid: currentUser.uid, ...userDocSnap.data() });
+                        } else {
+                            const newUserProfile = { email: currentUser.email, role: 'grower', createdAt: serverTimestamp() };
+                            await userDocRef.set(newUserProfile);
+                            setUserData({ uid: currentUser.uid, ...newUserProfile });
+                        }
+                        setUser(currentUser);
+
+                        const redirect = sessionStorage.getItem('redirectAfterLogin');
+                        if (redirect) {
+                            setPage(JSON.parse(redirect));
+                            sessionStorage.removeItem('redirectAfterLogin');
+                        } else {
+                            setPage({ name: 'dashboard', params: {} });
+                        }
+
+                    } else {
+                        setUser(null);
+                        setUserData(null);
+                    }
+                    setLoading(false);
+                });
+                
+                (async () => {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        try {
+                            await auth.signInWithCustomToken(__initial_auth_token);
+                        } catch (error) {
+                            // Let user choose to sign in
+                        }
+                    }
+                })();
+
+                return () => unsubscribe();
+            }, []);
+
+            const renderPage = () => {
+                if (loading) return <Spinner />;
+                if (!user) return <AuthComponent />;
+
+                switch (page.name) {
+                    case 'plantDetail': return <PlantDetail plantId={page.params.plantId} user={userData} setPage={setPage} />;
+                    case 'fruitDetail': return <FruitDetail fruitId={page.params.fruitId} user={userData} setPage={setPage} />;
+                    case 'claimSeed': return <ClaimSeed seedLotId={page.params.seedLotId} user={userData} setPage={setPage} />;
+                    case 'admin': return <AdminDashboard user={userData} setPage={setPage} />;
+                    default: return <Dashboard user={userData} setPage={setPage} />;
+                }
+            };
+
+            return (
+                <div className="bg-gray-100 min-h-screen font-sans text-gray-800">
+                    <Header user={user} userData={userData} setPage={setPage} />
+                    <main className="p-4 md:p-8 max-w-6xl mx-auto">
+                        {renderPage()}
+                    </main>
+                </div>
+            );
+        }
+
+        function Header({ user, userData, setPage }) {
+            const [showScanner, setShowScanner] = useState(false);
+            const [showManualEntry, setShowManualEntry] = useState(false);
+
+            const handleScan = (decodedText, decodedResult) => {
+                try {
+                    const url = new URL(decodedText);
+                    window.location.href = url.href;
+                } catch (error) {
+                    alert("Invalid QR Code scanned.");
+                }
+                setShowScanner(false);
+            };
+
+            return (
+                <header className="bg-white shadow-md sticky top-0 z-40 no-print">
+                    <div className="max-w-6xl mx-auto p-4 flex justify-between items-center">
+                        <h1 className="text-2xl font-bold text-green-700 cursor-pointer" onClick={() => setPage({ name: 'dashboard' })}>
+                            🌱 OSBP Database
+                        </h1>
+                        <div className="flex items-center gap-2">
+                            {user && (
+                                <>
+                                    <button onClick={() => setShowScanner(true)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-3 rounded-lg">Scan</button>
+                                    <button onClick={() => setShowManualEntry(true)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-3 rounded-lg">Manual Entry</button>
+                                    {userData?.role === 'admin' && (
+                                        <button onClick={() => setPage({ name: 'admin' })} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg">Admin</button>
+                                    )}
+                                    <button onClick={() => auth.signOut()} className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Sign Out</button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                    {showScanner && <Modal onClose={() => setShowScanner(false)}><QRScannerComponent onScan={handleScan} onError={(e) => console.error(e)} /></Modal>}
+                    {showManualEntry && <Modal onClose={() => setShowManualEntry(false)}><ManualEntryModal setPage={setPage} closeModal={() => setShowManualEntry(false)} /></Modal>}
+                </header>
+            );
+        }
+        
+        function ManualEntryModal({ setPage, closeModal }) {
+            const [id, setId] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const handleSubmit = async () => {
+                if (!id) return;
+                setLoading(true);
+                setError('');
+                const trimmedId = id.trim().toUpperCase();
+
+                try {
+                    let docRef = db.doc(`/artifacts/${appId}/public/data/seed_lots/${trimmedId}`);
+                    let docSnap = await docRef.get();
+                    if (docSnap.exists) {
+                        setPage({ name: 'claimSeed', params: { seedLotId: trimmedId } });
+                        closeModal();
+                        return;
+                    }
+
+                    docRef = db.doc(`/artifacts/${appId}/public/data/plants/${trimmedId}`);
+                    docSnap = await docRef.get();
+                    if (docSnap.exists) {
+                        setPage({ name: 'plantDetail', params: { plantId: trimmedId } });
+                        closeModal();
+                        return;
+                    }
+                    
+                    docRef = db.doc(`/artifacts/${appId}/public/data/fruits/${trimmedId}`);
+                    docSnap = await docRef.get();
+                    if (docSnap.exists) {
+                        setPage({ name: 'fruitDetail', params: { fruitId: trimmedId } });
+                        closeModal();
+                        return;
+                    }
+                    
+                    setError('ID not found in any collection.');
+
+                } catch (err) {
+                    setError('Error searching for ID.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div>
+                    <h3 className="text-2xl font-bold mb-4">Manual ID Entry</h3>
+                    <p className="text-gray-600 mb-4">Enter the 8-digit ID from the QR label.</p>
+                    <input 
+                        type="text"
+                        value={id}
+                        onChange={(e) => setId(e.target.value)}
+                        placeholder="e.g., A1B2C3D4"
+                        className="w-full p-2 border rounded uppercase"
+                    />
+                    {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+                    <button onClick={handleSubmit} disabled={loading} className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-400">
+                        {loading ? 'Searching...' : 'Find Item'}
+                    </button>
+                </div>
+            );
+        }
+
+        function QRScannerComponent({ onScan, onError }) {
+            const scannerRef = useRef(null);
+
+            useEffect(() => {
+                const scriptId = 'html5-qrcode-script';
+                let script = document.getElementById(scriptId);
+
+                const initializeScanner = () => {
+                    if (window.Html5Qrcode) {
+                        const scanner = new window.Html5Qrcode("reader");
+                        scannerRef.current = scanner;
+                        
+                        scanner.start(
+                            { facingMode: "environment" },
+                            {
+                                fps: 10,
+                                qrbox: { width: 250, height: 250 },
+                            },
+                            onScan,
+                            (errorMessage) => {}
+                        ).catch(onError);
+                    }
+                };
+
+                if (!script) {
+                    script = document.createElement('script');
+                    script.id = scriptId;
+                    script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+                    script.onload = initializeScanner;
+                    script.onerror = () => onError(new Error('Could not load QR Scanner script.'));
+                    document.body.appendChild(script);
+                } else {
+                    initializeScanner();
+                }
+
+                return () => {
+                    if (scannerRef.current && scannerRef.current.isScanning) {
+                        scannerRef.current.stop().catch(onError);
+                    }
+                };
+            }, [onScan, onError]);
+
+            return (
+                <div>
+                    <h3 className="text-2xl font-bold mb-4 text-center">Scan QR Code</h3>
+                    <div id="reader" style={{ width: '100%', borderRadius: '8px' }}></div>
+                </div>
+            );
+        }
+
+        function AuthComponent() {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [isSignUp, setIsSignUp] = useState(false);
+            const [error, setError] = useState('');
+
+            const handleGoogleSignIn = async () => {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                try {
+                    await auth.signInWithPopup(provider);
+                } catch (err) {
+                    setError(err.message);
+                }
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                try {
+                    if (isSignUp) {
+                        await auth.createUserWithEmailAndPassword(email, password);
+                    } else {
+                        await auth.signInWithEmailAndPassword(email, password);
+                    }
+                } catch (err) {
+                    setError(err.message);
+                }
+            };
+
+            return (
+                <div className="max-w-md mx-auto mt-10 p-8 bg-white rounded-xl shadow-lg">
+                    <h2 className="text-3xl font-bold text-center mb-2">Welcome!</h2>
+                    <p className="text-center text-gray-600 mb-6">Sign in to continue</p>
+                    
+                    <button onClick={handleGoogleSignIn} className="w-full bg-white border border-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition duration-300">
+                        <svg className="w-5 h-5" viewBox="0 0 48 48"><path fill="#4285F4" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path><path fill="#34A853" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"></path><path fill="#FBBC05" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"></path><path fill="#EA4335" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C42.021 35.596 44 30.134 44 24c0-1.341-.138-2.65-.389-3.917z"></path></svg>
+                        Sign in with Google
+                    </button>
+
+                    <div className="my-6 flex items-center">
+                        <div className="flex-grow border-t border-gray-300"></div>
+                        <span className="flex-shrink mx-4 text-gray-400">or</span>
+                        <div className="flex-grow border-t border-gray-300"></div>
+                    </div>
+
+                    <form onSubmit={handleSubmit}>
+                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" required />
+                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" required />
+                        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+                        <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">
+                            {isSignUp ? 'Sign Up' : 'Sign In'}
+                        </button>
+                    </form>
+                    <p className="text-center mt-6">
+                        {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+                        <button onClick={() => setIsSignUp(!isSignUp)} className="text-green-600 hover:underline font-semibold ml-2">
+                            {isSignUp ? 'Sign In' : 'Sign Up'}
+                        </button>
+                    </p>
+                </div>
+            );
+        }
+
+        function Dashboard({ user, setPage }) {
+            const [plants, setPlants] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                if (!user) return;
+                const plantsCollection = db.collection(`/artifacts/${appId}/public/data/plants`);
+                const q = plantsCollection.where("breederId", "==", user.uid);
+                const unsubscribe = q.onSnapshot((querySnapshot) => {
+                    const plantsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    plantsData.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                    setPlants(plantsData);
+                    setLoading(false);
+                }, (error) => {
+                    console.error("Error fetching plants:", error);
+                    setLoading(false);
+                });
+                return () => unsubscribe();
+            }, [user]);
+
+            if (loading) return <Spinner />;
+
+            return (
+                <div>
+                    <h2 className="text-3xl font-bold mb-6">My Plants</h2>
+                    {plants.length === 0 ? (
+                        <div className="text-center text-gray-500 mt-10 p-8 bg-white rounded-xl shadow-md">
+                            <p className="text-lg">Welcome! You don't have any active plants.</p>
+                            <p className="mt-2">Scan the QR code on your seed packet to get started.</p>
+                        </div>
+                    ) : (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {plants.map(plant => (
+                                <div key={plant.id} onClick={() => setPage({ name: 'plantDetail', params: { plantId: plant.id } })} className="bg-white p-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                                    <h3 className="text-xl font-bold text-green-800">{plant.plantIdentifier}</h3>
+                                    <p className="text-gray-600">{plant.strain}</p>
+                                    <p className="text-sm text-gray-400 mt-2">Planted: {new Date(plant.datePlanted).toLocaleDateString()}</p>
+                                    <p className={`mt-2 font-semibold text-sm py-1 px-3 inline-block rounded-full ${ plant.status === 'Active' ? 'bg-green-100 text-green-800' : plant.status === 'Harvested' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800' }`}>{plant.status}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function AdminDashboard({ user, setPage }) {
+            const [adminView, setAdminView] = useState('seed_lots'); // seed_lots, seed_batches, users, plants
+
+            if (user.role !== 'admin') return <p>Access Denied.</p>;
+            
+            const renderAdminView = () => {
+                switch (adminView) {
+                    case 'seed_batches': return <SeedBatchManagement />;
+                    case 'users': return <UserManagement />;
+                    case 'plants': return <AllPlantsView setPage={setPage} />;
+                    case 'seed_lots':
+                    default:
+                        return <SeedLotManagement />;
+                }
+            };
+
+            return (
+                <div className="bg-white p-8 rounded-xl shadow-lg">
+                    <h2 className="text-3xl font-bold mb-6">Admin Dashboard</h2>
+                    <div className="flex border-b mb-6 flex-wrap">
+                        <button onClick={() => setAdminView('seed_lots')} className={`py-2 px-4 ${adminView === 'seed_lots' ? 'border-b-2 border-purple-600 font-bold text-purple-600' : 'text-gray-500'}`}>Single Seed Lots</button>
+                        <button onClick={() => setAdminView('seed_batches')} className={`py-2 px-4 ${adminView === 'seed_batches' ? 'border-b-2 border-purple-600 font-bold text-purple-600' : 'text-gray-500'}`}>Seed Batches</button>
+                        <button onClick={() => setAdminView('users')} className={`py-2 px-4 ${adminView === 'users' ? 'border-b-2 border-purple-600 font-bold text-purple-600' : 'text-gray-500'}`}>Users</button>
+                        <button onClick={() => setAdminView('plants')} className={`py-2 px-4 ${adminView === 'plants' ? 'border-b-2 border-purple-600 font-bold text-purple-600' : 'text-gray-500'}`}>All Plants</button>
+                    </div>
+                    {renderAdminView()}
+                </div>
+            );
+        }
+
+        function SeedLotManagement() {
+            const [seedLots, setSeedLots] = useState([]);
+            const [selectedLot, setSelectedLot] = useState(null);
+
+            useEffect(() => {
+                const unsubscribe = db.collection(`/artifacts/${appId}/public/data/seed_lots`).onSnapshot((snapshot) => {
+                    const lots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    lots.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                    setSeedLots(lots);
+                });
+                return unsubscribe;
+            }, []);
+
+            return (
+                <div>
+                    <h3 className="text-2xl font-bold mb-4">Single Seed Lots (for Growers)</h3>
+                    <p className="mb-4 text-gray-600">These are individual seed packets generated from a Seed Batch. The QR code for these lots is what you send to growers.</p>
+                    <div className="space-y-4">
+                        {seedLots.map(lot => (
+                            <div key={lot.id} className="p-4 border rounded-lg flex justify-between items-center">
+                                <div>
+                                    <p className="font-bold">{lot.strain} ({lot.generation})</p>
+                                    <p className="text-sm text-gray-500">From Batch: {lot.seedBatchId || 'N/A'}</p>
+                                    <p className={`text-sm ${lot.isClaimed ? 'text-red-500' : 'text-green-500'}`}>{lot.isClaimed ? 'Claimed' : 'Unclaimed'}</p>
+                                </div>
+                                <button onClick={() => setSelectedLot(lot)} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-lg">Create Label</button>
+                            </div>
+                        ))}
+                    </div>
+                    {selectedLot && <Modal onClose={() => setSelectedLot(null)}><PrintQRView item={selectedLot} type="seedLot" /></Modal>}
+                </div>
+            );
+        }
+
+        function SeedBatchManagement() {
+            const [seedBatches, setSeedBatches] = useState([]);
+            const [selectedBatch, setSelectedBatch] = useState(null);
+            const [modalView, setModalView] = useState(''); // 'generate' or 'print'
+            const [numLots, setNumLots] = useState(1);
+
+            useEffect(() => {
+                const unsubscribe = db.collection(`/artifacts/${appId}/public/data/seed_batches`).onSnapshot((snapshot) => {
+                    const batches = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    batches.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                    setSeedBatches(batches);
+                });
+                return unsubscribe;
+            }, []);
+
+            const generateLots = async () => {
+                if (!selectedBatch || numLots < 1) return;
+                alert(`Generating ${numLots} single seed lots from batch ${selectedBatch.id}...`);
+                const batch = db.batch();
+                const seedLotsCollection = db.collection(`/artifacts/${appId}/public/data/seed_lots`);
+                for (let i = 0; i < numLots; i++) {
+                    const newLotId = await generateUniqueId(seedLotsCollection);
+                    const newLotRef = seedLotsCollection.doc(newLotId);
+                    batch.set(newLotRef, {
+                        strain: selectedBatch.strain,
+                        species: selectedBatch.species,
+                        generation: selectedBatch.generation,
+                        seedBatchId: selectedBatch.id,
+                        femaleParentId: selectedBatch.femaleParentId,
+                        maleParentId: selectedBatch.maleParentId,
+                        isClaimed: false,
+                        createdAt: serverTimestamp(),
+                        createdBy: auth.currentUser.uid
+                    });
+                }
+                await batch.commit();
+                alert('Successfully generated seed lots!');
+                setSelectedBatch(null);
+            };
+
+            const openModal = (batch, view) => {
+                setSelectedBatch(batch);
+                setModalView(view);
+            };
+
+            const closeModal = () => {
+                setSelectedBatch(null);
+                setModalView('');
+            };
+
+            return (
+                <div>
+                    <h3 className="text-2xl font-bold mb-4">Seed Batches (from Fruit)</h3>
+                     <p className="mb-4 text-gray-600">These are batches of seeds processed from a harvested fruit. From here, you can generate single seed lots to distribute.</p>
+                    <div className="space-y-4">
+                        {seedBatches.map(batch => (
+                            <div key={batch.id} className="p-4 border rounded-lg flex justify-between items-center">
+                                <div>
+                                    <p className="font-bold">{batch.strain} ({batch.generation})</p>
+                                    <p className="text-sm text-gray-500">Batch ID: {batch.id}</p>
+                                    <p className="text-sm text-gray-500">From Fruit: {batch.femaleParentId}</p>
+                                </div>
+                                <div>
+                                    <button onClick={() => openModal(batch, 'generate')} className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded-lg mr-2">Generate Lots</button>
+                                    <button onClick={() => openModal(batch, 'print')} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-lg">Create Label</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    {selectedBatch && (
+                        <Modal onClose={closeModal}>
+                            {modalView === 'generate' && (
+                                <div>
+                                    <h3 className="text-2xl font-bold mb-4">Generate Single Seed Lots</h3>
+                                    <p>How many single seed lots would you like to generate from batch <strong>{selectedBatch.id}</strong>?</p>
+                                    <input 
+                                        type="number" 
+                                        value={numLots} 
+                                        onChange={(e) => setNumLots(parseInt(e.target.value, 10))} 
+                                        className="w-full p-2 border rounded mt-4"
+                                        min="1"
+                                    />
+                                    <button onClick={generateLots} className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Generate</button>
+                                </div>
+                            )}
+                            {modalView === 'print' && (
+                                <PrintQRView item={selectedBatch} type="seedBatch" />
+                            )}
+                        </Modal>
+                    )}
+                </div>
+            );
+        }
+
+        function UserManagement() {
+            const [users, setUsers] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                const unsubscribe = db.collection(`/artifacts/${appId}/users`).onSnapshot((snapshot) => {
+                    const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setUsers(usersData);
+                    setLoading(false);
+                });
+                return unsubscribe;
+            }, []);
+
+            const handleRoleChange = async (userId, newRole) => {
+                const userDocRef = db.doc(`/artifacts/${appId}/users/${userId}`);
+                try {
+                    await userDocRef.set({ role: newRole }, { merge: true });
+                } catch (error) {
+                    console.error("Error updating user role:", error);
+                }
+            };
+
+            if (loading) return <Spinner />;
+
+            return (
+                <div>
+                    <h3 className="text-2xl font-bold mb-4">User Roles</h3>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="border-b">
+                                    <th className="p-2">Email</th>
+                                    <th className="p-2">Role</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.map(user => (
+                                    <tr key={user.id} className="border-b">
+                                        <td className="p-2">{user.email}</td>
+                                        <td className="p-2">
+                                            <select 
+                                                value={user.role} 
+                                                onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                                                className="p-1 border rounded bg-white"
+                                            >
+                                                <option value="grower">Grower</option>
+                                                <option value="reviewer">Reviewer</option>
+                                                <option value="admin">Admin</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        }
+
+        function AllPlantsView({ setPage }) {
+            const [plants, setPlants] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                const unsubscribe = db.collection(`/artifacts/${appId}/public/data/plants`).onSnapshot((querySnapshot) => {
+                    const plantsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    plantsData.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                    setPlants(plantsData);
+                    setLoading(false);
+                });
+                return () => unsubscribe();
+            }, []);
+
+            if (loading) return <Spinner />;
+
+            return (
+                <div>
+                    <h3 className="text-2xl font-bold mb-4">All Plants in Database</h3>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {plants.map(plant => (
+                            <div key={plant.id} onClick={() => setPage({ name: 'plantDetail', params: { plantId: plant.id } })} className="bg-white p-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                                <h3 className="text-xl font-bold text-green-800">{plant.plantIdentifier}</h3>
+                                <p className="text-gray-600">{plant.strain}</p>
+                                <p className="text-sm text-gray-400 mt-2">Breeder ID: {plant.breederId.substring(0, 8)}...</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        function PrintQRView({ item, type }) {
+            const labelRef = useRef();
+
+            const generatePdf = async () => {
+                const { jsPDF } = window.jspdf;
+                const element = labelRef.current;
+                if (!element) return;
+
+                const canvas = await html2canvas(element, { scale: 3 });
+                const data = canvas.toDataURL('image/png');
+
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'in',
+                    format: [4, 3]
+                });
+
+                pdf.addImage(data, 'PNG', 0, 0, 4, 3);
+                pdf.output('dataurlnewwindow');
+            };
+            
+            const url = type === 'seedLot' 
+                ? `${window.location.origin}/database.html?seedLotId=${item.id}`
+                : `${window.location.origin}/database.html?seedBatchId=${item.id}`;
+
+            return (
+                <div>
+                    {/* Hidden div for PDF generation */}
+                    <div className="hidden">
+                        <div ref={labelRef} className="p-4 text-center bg-white" style={{width: '4in', height: '3in', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid black'}}>
+                            <div>
+                                <h3 className="text-2xl font-bold">{item.strain} ({item.generation})</h3>
+                                <p className="text-sm">{type === 'seedLot' ? 'Single Seed Lot' : 'Seed Batch'}</p>
+                            </div>
+                            <QRCode text={url} size={150} />
+                            <div>
+                                <p className="font-mono text-lg">{item.id}</p>
+                                <p className="text-xs">Parent: {item.femaleParentId || item.seedBatchId || 'N/A'}</p>
+                                <p className="text-xs">Created: {item.createdAt?.toDate().toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Visible preview for the user */}
+                    <div className="p-4 text-center">
+                        <h3 className="text-2xl font-bold">Label Preview</h3>
+                        <div className="mt-4 border p-2">
+                             <h4 className="text-xl font-bold">{item.strain} ({item.generation})</h4>
+                            <p className="text-sm text-gray-600">{type === 'seedLot' ? 'Seed Lot ID' : 'Seed Batch ID'}: {item.id}</p>
+                            <QRCode text={url} size={180} />
+                            <p className="font-bold">{type === 'seedLot' ? 'Scan to Claim & Plant Seed' : 'Scan to View Batch Info'}</p>
+                        </div>
+                    </div>
+                    <button onClick={generatePdf} className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">
+                        Create Label
+                    </button>
+                </div>
+            );
+        }
+
+        function ClaimSeed({ seedLotId, user, setPage }) {
+            const [seedLot, setSeedLot] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState('');
+
+            useEffect(() => {
+                const getLot = async () => {
+                    const lotDoc = await db.doc(`/artifacts/${appId}/public/data/seed_lots/${seedLotId}`).get();
+                    if (lotDoc.exists) {
+                        const data = lotDoc.data();
+                        if (data.isClaimed) {
+                            setError(`This seed lot has already been claimed.`);
+                        }
+                        setSeedLot({ id: lotDoc.id, ...data });
+                    } else {
+                        setError("Seed lot not found.");
+                    }
+                    setLoading(false);
+                };
+                getLot();
+            }, [seedLotId]);
+
+            const handleClaim = async () => {
+                setLoading(true);
+                try {
+                    const plantsCollection = db.collection(`/artifacts/${appId}/public/data/plants`);
+                    const newPlantId = await generateUniqueId(plantsCollection);
+                    const datePlanted = new Date().toISOString().slice(0, 10);
+                    
+                    const batch = db.batch();
+                    
+                    const newPlantRef = plantsCollection.doc(newPlantId);
+                    batch.set(newPlantRef, {
+                        plantIdentifier: newPlantId, // Use the unique ID as the identifier
+                        strain: seedLot.strain,
+                        species: seedLot.species,
+                        generation: seedLot.generation,
+                        femaleParentId: seedLot.femaleParentId,
+                        maleParentId: seedLot.maleParentId,
+                        datePlanted,
+                        breederId: user.uid,
+                        status: 'Active',
+                        createdAt: serverTimestamp(),
+                    });
+
+                    const newEventRef = db.collection(`/artifacts/${appId}/public/data/events`).doc();
+                    batch.set(newEventRef, {
+                        plantId: newPlantId,
+                        eventType: 'Planted',
+                        comment: `Claimed seed lot ${seedLotId} and planted.`,
+                        eventDate: datePlanted,
+                        userId: user.uid,
+                        createdAt: serverTimestamp(),
+                    });
+
+                    const lotDocRef = db.doc(`/artifacts/${appId}/public/data/seed_lots/${seedLotId}`);
+                    batch.update(lotDocRef, { isClaimed: true, claimedBy: user.uid, plantId: newPlantId });
+
+                    await batch.commit();
+
+                    setPage({ name: 'plantDetail', params: { plantId: newPlantId } });
+
+                } catch (err) {
+                    console.error(err);
+                    setError("Failed to claim seeds. Please try again.");
+                    setLoading(false);
+                }
+            };
+
+            if (loading) return <Spinner />;
+
+            return (
+                <div className="bg-white p-8 rounded-xl shadow-lg max-w-2xl mx-auto text-center">
+                    <h2 className="text-3xl font-bold mb-4">Claim Seeds</h2>
+                    {error ? <p className="text-red-500">{error}</p> :
+                     seedLot ? (
+                        <div>
+                            <p className="text-xl">You are about to claim the following seed lot:</p>
+                            <div className="my-6 p-4 bg-gray-100 rounded-lg">
+                                <p className="font-bold text-2xl">{seedLot.strain}</p>
+                                <p><strong>Species:</strong> {seedLot.species}</p>
+                                <p><strong>Generation:</strong> {seedLot.generation}</p>
+                            </div>
+                            <button onClick={handleClaim} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">
+                                Confirm & Create Plant Entry
+                            </button>
+                        </div>
+                     ) : null}
+                </div>
+            );
+        }
+
+        function PlantDetail({ plantId, user, setPage }) {
+            const [plant, setPlant] = useState(null);
+            const [lineage, setLineage] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                const unsubscribePlant = db.doc(`/artifacts/${appId}/public/data/plants/${plantId}`).onSnapshot((docSnap) => {
+                    if (docSnap.exists) setPlant({ id: docSnap.id, ...docSnap.data() });
+                    setLoading(false);
+                });
+
+                const eventsQuery = db.collection(`/artifacts/${appId}/public/data/events`).where("plantId", "==", plantId);
+                const fruitsQuery = db.collection(`/artifacts/${appId}/public/data/fruits`).where("femaleParentId", "==", plantId);
+
+                const unsubscribeEvents = eventsQuery.onSnapshot((snapshot) => {
+                    const eventsData = snapshot.docs.map(d => ({ type: 'event', ...d.data(), id: d.id }));
+                    setLineage(prev => [...eventsData, ...prev.filter(i => i.type !== 'event')].sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
+                });
+
+                const unsubscribeFruits = fruitsQuery.onSnapshot((snapshot) => {
+                    const fruitsData = snapshot.docs.map(d => ({ type: 'fruit', ...d.data(), id: d.id }));
+                    setLineage(prev => [...fruitsData, ...prev.filter(i => i.type !== 'fruit')].sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0)));
+                });
+
+                return () => {
+                    unsubscribePlant();
+                    unsubscribeEvents();
+                    unsubscribeFruits();
+                };
+            }, [plantId]);
+
+            const canEdit = user.role === 'admin' || plant?.breederId === user.uid;
+
+            if (loading) return <Spinner />;
+            if (!plant) return <p>Plant not found.</p>;
+            
+            return (
+                <div>
+                    <div className="bg-white p-6 rounded-xl shadow-lg mb-8">
+                        <h2 className="text-3xl font-bold text-green-800">{plant.plantIdentifier}</h2>
+                        <p className="text-xl text-gray-600">{plant.strain} ({plant.generation})</p>
+                        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div><strong className="block text-gray-500">Species</strong>{plant.species}</div>
+                            <div><strong className="block text-gray-500">Status</strong>{plant.status}</div>
+                            <div><strong className="block text-gray-500">Female Parent</strong>{plant.femaleParentId || 'N/A'}</div>
+                            <div><strong className="block text-gray-500">Male Parent</strong>{plant.maleParentId || 'N/A'}</div>
+                        </div>
+                    </div>
+
+                    {canEdit && plant.status === 'Active' && <ActionPanel plant={plant} user={user} />}
+
+                    <div className="space-y-8">
+                        {lineage.map(item => item.type === 'event' ? <EventCard key={item.id} event={item} /> : <FruitCard key={item.id} fruit={item} setPage={setPage} />)}
+                    </div>
+                </div>
+            );
+        }
+
+        function ActionPanel({ plant, user }) {
+            const [showEventForm, setShowEventForm] = useState(false);
+            const [showFruitForm, setShowFruitForm] = useState(false);
+            
+            const handleStatusChange = async (newStatus) => {
+                const plantDocRef = db.doc(`/artifacts/${appId}/public/data/plants/${plant.id}`);
+                await plantDocRef.set({ status: newStatus }, { merge: true });
+            };
+
+            return (
+                <div className="bg-white p-6 rounded-xl shadow-lg mb-8">
+                    <div className="flex flex-wrap gap-4">
+                        <button onClick={() => setShowEventForm(!showEventForm)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">{showEventForm ? 'Cancel' : 'Log Event'}</button>
+                        <button onClick={() => setShowFruitForm(!showFruitForm)} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg">{showFruitForm ? 'Cancel' : 'Log Harvested Fruit'}</button>
+                        <button onClick={() => handleStatusChange('Culled')} className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Mark as Culled</button>
+                    </div>
+                    {showEventForm && <AddEventForm plantId={plant.id} user={user} onEventAdded={() => setShowEventForm(false)} />}
+                    {showFruitForm && <AddFruitForm plant={plant} user={user} onFruitAdded={() => setShowFruitForm(false)} />}
+                </div>
+            );
+        }
+
+        function EventCard({ event }) {
+            return (
+                <div className="p-4 rounded-lg bg-white shadow-md">
+                    <p className="font-bold text-lg">{event.eventType}</p>
+                    <p className="text-sm text-gray-500">{event.eventDate}</p>
+                    <p className="mt-2">{event.comment}</p>
+                    {event.imageUrl && <a href={event.imageUrl} target="_blank" rel="noopener noreferrer"><img src={event.imageUrl} alt="Observation" className="mt-4 rounded-lg max-w-xs shadow-md" /></a>}
+                </div>
+            );
+        }
+
+        function FruitCard({ fruit, setPage }) {
+            return (
+                <div onClick={() => setPage({ name: 'fruitDetail', params: { fruitId: fruit.id } })} className="p-4 rounded-lg bg-yellow-50 shadow-md cursor-pointer hover:bg-yellow-100">
+                    <p className="font-bold text-lg text-yellow-800">🍉 Fruit Harvested</p>
+                    <p className="text-sm text-gray-500">{new Date(fruit.harvestDate).toLocaleDateString()}</p>
+                    <p className="mt-2">Fruit ID: {fruit.id}</p>
+                    <p className="mt-1">Notes: {fruit.notes || 'N/A'}</p>
+                </div>
+            );
+        }
+
+        function AddEventForm({ plantId, user, onEventAdded }) {
+            const [eventType, setEventType] = useState('Observation');
+            const [eventDate, setEventDate] = useState(new Date().toISOString().slice(0, 10));
+            const [comment, setComment] = useState('');
+            const [imageFile, setImageFile] = useState(null);
+            const [isLoading, setIsLoading] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setIsLoading(true);
+                let imageUrl = '';
+                if (imageFile) {
+                    const storageRef = storage.ref(`plant_images/${plantId}/${Date.now()}_${imageFile.name}`);
+                    const snapshot = await storageRef.put(imageFile);
+                    imageUrl = await snapshot.ref.getDownloadURL();
+                }
+                await db.collection(`/artifacts/${appId}/public/data/events`).add({
+                    plantId, eventType, eventDate, comment, imageUrl, userId: user.uid, createdAt: serverTimestamp(),
+                });
+                onEventAdded();
+            };
+
+            return (
+                <form onSubmit={handleSubmit} className="mt-6 p-6 bg-gray-50 border rounded-lg">
+                    <h4 className="text-xl font-bold mb-4">New Log Entry</h4>
+                    <select value={eventType} onChange={e => setEventType(e.target.value)} className="w-full p-2 mb-2 border rounded bg-white">
+                        <option>Observation</option><option>Transplanted</option><option>Fertilized</option>
+                        <option>Treated (Pest/Disease)</option><option>Pollinated</option><option>Storage</option><option>Distribution</option>
+                    </select>
+                    <input type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} className="w-full p-2 mb-2 border rounded" />
+                    <textarea value={comment} onChange={e => setComment(e.target.value)} rows="3" placeholder="Comments..." className="w-full p-2 mb-2 border rounded"></textarea>
+                    <input type="file" onChange={e => setImageFile(e.target.files[0])} accept="image/*" className="w-full p-2 mb-2 border rounded" />
+                    <button type="submit" disabled={isLoading} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-400">
+                        {isLoading ? 'Saving...' : 'Save Event'}
+                    </button>
+                </form>
+            );
+        }
+
+        function AddFruitForm({ plant, user, onFruitAdded }) {
+            const [harvestDate, setHarvestDate] = useState(new Date().toISOString().slice(0, 10));
+            const [maleParentId, setMaleParentId] = useState('');
+            const [notes, setNotes] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setIsLoading(true);
+                const fruitsCollection = db.collection(`/artifacts/${appId}/public/data/fruits`);
+                const newFruitId = await generateUniqueId(fruitsCollection);
+                await fruitsCollection.doc(newFruitId).set({
+                    femaleParentId: plant.id,
+                    maleParentId: maleParentId || plant.maleParentId || '',
+                    strain: plant.strain,
+                    species: plant.species,
+                    generation: plant.generation,
+                    harvestDate,
+                    notes,
+                    breederId: user.uid,
+                    createdAt: serverTimestamp(),
+                });
+                setIsLoading(false);
+                onFruitAdded();
+            };
+            
+            return (
+                <form onSubmit={handleSubmit} className="mt-6 p-6 bg-yellow-50 border rounded-lg">
+                    <h4 className="text-xl font-bold mb-4">Log Harvested Fruit</h4>
+                    <input type="date" value={harvestDate} onChange={e => setHarvestDate(e.target.value)} className="w-full p-2 mb-2 border rounded" />
+                    <input value={maleParentId} onChange={e => setMaleParentId(e.target.value)} placeholder="Male Parent ID (if specific cross)" className="w-full p-2 mb-2 border rounded" />
+                    <textarea value={notes} onChange={e => setNotes(e.target.value)} rows="2" placeholder="Notes (e.g., weight, color)" className="w-full p-2 mb-2 border rounded"></textarea>
+                    <button type="submit" disabled={isLoading} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-400">
+                        {isLoading ? 'Saving...' : 'Save Fruit'}
+                    </button>
+                </form>
+            );
+        }
+
+        function FruitDetail({ fruitId, user, setPage }) {
+            const [fruit, setFruit] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [newBatch, setNewBatch] = useState(null);
+
+            useEffect(() => {
+                const unsubscribe = db.doc(`/artifacts/${appId}/public/data/fruits/${fruitId}`).onSnapshot((docSnap) => {
+                    if (docSnap.exists) setFruit({ id: docSnap.id, ...docSnap.data() });
+                    setLoading(false);
+                });
+                return unsubscribe;
+            }, [fruitId]);
+            
+            const handleProcessSeeds = async () => {
+                setLoading(true);
+                const nextGen = fruit.generation.includes('M') ? `M${parseInt(fruit.generation.slice(1)) + 1}` : `F${parseInt(fruit.generation.slice(1)) + 1}`;
+                
+                const newBatchId = await generateUniqueId(db.collection(`/artifacts/${appId}/public/data/seed_batches`));
+                const newBatchRef = db.doc(`/artifacts/${appId}/public/data/seed_batches/${newBatchId}`);
+
+                const newBatchData = {
+                    strain: fruit.strain,
+                    species: fruit.species,
+                    generation: nextGen,
+                    femaleParentId: fruitId,
+                    maleParentId: fruit.maleParentId,
+                    createdAt: serverTimestamp(),
+                    createdBy: user.uid
+                };
+
+                await newBatchRef.set(newBatchData);
+                await db.doc(`/artifacts/${appId}/public/data/fruits/${fruitId}`).set({ processedToSeedBatchId: newBatchId }, { merge: true });
+                
+                setNewBatch({ id: newBatchId, ...newBatchData });
+                setLoading(false);
+            };
+
+            if (loading) return <Spinner />;
+            if (!fruit) return <p>Fruit not found.</p>;
+
+            const canEdit = user.role === 'admin' || fruit.breederId === user.uid;
+
+            return (
+                <div>
+                    <div className="bg-white p-8 rounded-xl shadow-lg">
+                        <button onClick={() => setPage({ name: 'plantDetail', params: { plantId: fruit.femaleParentId } })} className="text-green-600 hover:underline mb-6">&larr; Back to Parent Plant</button>
+                        <h2 className="text-3xl font-bold text-yellow-800">Fruit Details</h2>
+                        <p className="text-xl text-gray-600">ID: {fruit.id}</p>
+                        <div className="my-4 p-4 bg-gray-50 rounded-lg">
+                            <p><strong>Strain:</strong> {fruit.strain}</p>
+                            <p><strong>Harvest Date:</strong> {new Date(fruit.harvestDate).toLocaleDateString()}</p>
+                            <p><strong>Notes:</strong> {fruit.notes}</p>
+                        </div>
+                        {canEdit && !fruit.processedToSeedBatchId && (
+                            <button onClick={handleProcessSeeds} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg">
+                                Process Seeds & Create Seed Batch
+                            </button>
+                        )}
+                        {fruit.processedToSeedBatchId && (
+                            <div className="mt-4 text-center p-4 bg-purple-100 rounded-lg">
+                                <p className="font-bold text-purple-800">Seeds Processed!</p>
+                                <p>New Seed Batch ID: {fruit.processedToSeedBatchId}</p>
+                                <button onClick={() => setPage({ name: 'admin' })} className="mt-2 text-purple-700 underline">Go to Admin Dashboard to manage</button>
+                            </div>
+                        )}
+                    </div>
+                    {newBatch && <Modal onClose={() => setNewBatch(null)}><PrintQRView item={newBatch} type="seedBatch" /></Modal>}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

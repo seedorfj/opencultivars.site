@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us | OSBP</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header id="header-placeholder"></header>
+
+    <main class="container page-content">
+        <h1>Our Philosophy</h1>
+        <p>We are a community of growers, scientists, and hobbyists dedicated to advancing plant breeding through collaborative, open-source citizen science.</p>
+
+        <article>
+            <h2>Science First</h2>
+            <p>Our work is driven by curiosity and a commitment to rigorous scientific methods. We believe in the importance of careful documentation, meticulous record-keeping, and objective evaluation. From germination rates to phenotypic expression, good data is the foundation of our success.</p>
+        </article>
+        
+        <article>
+            <h2>Inclusive & Civil Environment</h2>
+            <p>We recognize that there are many paths to successful agriculture. This group is open to all growers, whether you use intensive high-performance techniques with chemical fertilizers or follow sustainable, organic practices that build long-term soil health. Our focus is on the science of plant breeding, not debating agricultural ideologies. We insist on a civil, respectful, and non-judgmental environment for all participants.</p>
+        </article>
+
+        <article>
+            <h2>Commitment to Open Access</h2>
+            <p>Knowledge becomes more powerful when it's shared. We understand that valuable insights are often trapped in closed platforms. A core goal of this project is to publish our data, discussions, and findings in a publicly accessible archive. By ensuring our lessons are available to all, we hope to contribute to the broader community of breeders and growers worldwide.</p>
+        </article>
+    </main>
+
+    <footer id="footer-placeholder"></footer>
+
+    <script src="script.js"></script>
+    <script>
+        function loadTemplate(url, elementId, callback) {
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById(elementId).innerHTML = data;
+                    if (callback) callback();
+                });
+        }
+        loadTemplate('header.html', 'header-placeholder', () => {
+            navSlide(); 
+            document.querySelector('a[href="about.html"]').classList.add('active');
+        });
+        loadTemplate('footer.html', 'footer-placeholder');
+    </script>
+</body>
+</html>
