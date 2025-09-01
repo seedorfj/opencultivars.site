@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects | OSBP</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header id="header-placeholder"></header>
+
+    <main class="container page-content">
+        <h1>Our Research Projects</h1>
+        <p>Below are the active citizen science projects you can follow or participate in. Each project has a unique set of goals and challenges, but all are driven by our shared passion for discovery.</p>
+        
+        <div class="project-cards" style="margin-top: 2rem;">
+            <div class="card">
+                <img src="https://images.unsplash.com/photo-1615485499978-1278145e5425?q=80&w=1925" alt="Butternut squash cut in half">
+                <h3>The Chromatic Squash Initiative</h3>
+                <p>Using mutation breeding to develop novel flesh colors (purple, blue, red) in *Cucurbita moschata* 'Honeypatch'.</p>
+                <a href="squash-project.html" class="learn-more">View Project Details &rarr;</a>
+            </div>
+            <div class="card">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Solanum_sisymbriifolium_fruits.jpg" alt="Litchi tomato fruit on a spiny plant">
+                <h3>Litchi Tomato Domestication</h3>
+                <p>Working to remove spines, improve productivity, and retain disease resistance in the intriguing Litchi Tomato (*Solanum sisymbriifolium*).</p>
+                <a href="litchi-tomato-project.html" class="learn-more">View Project Details &rarr;</a>
+            </div>
+        </div>
+
+        <article style="margin-top: 4rem;">
+            <h2>Future Projects</h2>
+            <p>Have an idea for a collaborative breeding project? Our community is always looking for the next challenge. Join the discussion on our Discord (link coming soon!) or get involved with one of our current projects to get started.</p>
+        </article>
+    </main>
+
+    <footer id="footer-placeholder"></footer>
+
+    <script src="script.js"></script>
+    <script>
+        function loadTemplate(url, elementId, callback) {
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById(elementId).innerHTML = data;
+                    if (callback) callback();
+                });
+        }
+        loadTemplate('header.html', 'header-placeholder', () => {
+            navSlide(); 
+            document.querySelector('a[href="projects.html"]').classList.add('active');
+        });
+        loadTemplate('footer.html', 'footer-placeholder');
+    </script>
+</body>
+</html>
