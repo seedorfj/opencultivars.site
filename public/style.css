@@ -1,9 +1,12 @@
 /* --- General Styling & Variables --- */
 :root {
-    --primary-color: #4CAF50; /* A nice, vibrant green */
-    --secondary-color: #8D6E63; /* Earthy brown */
+    --primary-color: #6A994E;     /* Green */
+    --secondary-color: #386641;   /* Dark Green */
+    --light-accent: #F2E8CF;      /* Tan */
+    --red-accent: #BC4749;       /* Red Accent */
+    --light-green: #A7C957;       /* Light Green */
     --dark-color: #333;
-    --light-color: #f4f4f4;
+    --light-color: #f4f4f4;       /* This is a light grey, might want to replace with --light-accent */
     --font-family: 'Lato', sans-serif;
 }
 

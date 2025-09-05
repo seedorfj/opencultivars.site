@@ -1,0 +1,6 @@
+# Allow all crawlers access to the site
+User-agent: *
+Disallow: /database/
+
+# Point crawlers to the sitemap
+Sitemap: https://opencultivars.org/sitemap.xml
