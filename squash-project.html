@@ -47,21 +47,10 @@
 
     <footer id="footer-placeholder"></footer>
 
-    <script src="script.js"></script>
+    <script src="/script.js"></script>
     <script>
-        function loadTemplate(url, elementId, callback) {
-            fetch(url)
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById(elementId).innerHTML = data;
-                    if (callback) callback();
-                });
-        }
-        loadTemplate('/header.html', 'header-placeholder', () => {
-            navSlide(); 
-            document.querySelector('a[href="projects.html"]').classList.add('active');
-        });
-        loadTemplate('/footer.html', 'footer-placeholder');
+        navSlide();
+        document.querySelector('.nav-links a[href="/projects.html"]').classList.add('active');
     </script>
 </body>
 </html>

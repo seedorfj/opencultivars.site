@@ -34,20 +34,7 @@
 
     <script src="/script.js"></script>
     <script>
-        // Function to load HTML templates
-        function loadTemplate(url, elementId, callback) {
-            fetch(url)
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById(elementId).innerHTML = data;
-                    if (callback) callback();
-                });
-        }
-        // Load header and footer from the root directory
-        loadTemplate('/header.html', 'header-placeholder', () => {
-            navSlide(); 
-        });
-        loadTemplate('/footer.html', 'footer-placeholder');
+        navSlide();
     </script>
 </body>
 </html>
