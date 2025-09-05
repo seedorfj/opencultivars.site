@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "opencultivars",
+    "site": "opencultivars-database",
     "public": ".",
     "ignore": [
       "firebase.json",
