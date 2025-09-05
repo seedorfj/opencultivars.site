@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Page Not Found | OpenCultivars</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Page Not Found | OSBP</title>
+    <link rel="stylesheet" href="/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
@@ -26,13 +26,13 @@
             <h1>404</h1>
             <h2>Page Not Found</h2>
             <p>Looks like you've strayed from the cultivated path! The page you're looking for might have been moved or doesn't exist.</p>
-            <a href="index.html" class="cta-button">Return to Homepage</a>
+            <a href="/index.html" class="cta-button">Return to Homepage</a>
         </div>
     </main>
 
     <footer id="footer-placeholder"></footer>
 
-    <script src="script.js"></script>
+    <script src="/script.js"></script>
     <script>
         // Function to load HTML templates
         function loadTemplate(url, elementId, callback) {
@@ -43,11 +43,11 @@
                     if (callback) callback();
                 });
         }
-        // Load header and footer, then initialize the mobile navigation
-        loadTemplate('header.html', 'header-placeholder', () => {
+        // Load header and footer from the root directory
+        loadTemplate('/header.html', 'header-placeholder', () => {
             navSlide(); 
         });
-        loadTemplate('footer.html', 'footer-placeholder');
+        loadTemplate('/footer.html', 'footer-placeholder');
     </script>
 </body>
 </html>
