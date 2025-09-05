@@ -6,7 +6,7 @@
     --red-accent: #BC4749;       /* Red Accent */
     --light-green: #A7C957;       /* Light Green */
     --dark-color: #333;
-    --light-color: #f4f4f4;       /* This is a light grey, might want to replace with --light-accent */
+    --light-color: #f4f4f4;
     --font-family: 'Lato', sans-serif;
 }
 
@@ -26,7 +26,6 @@ body {
 .container {
     max-width: 1100px;
     margin: auto;
-    /* overflow: hidden; -- REMOVED THIS LINE TO FIX DROPDOWN */
     padding: 0 2rem;
 }
 
@@ -45,7 +44,7 @@ header {
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     position: sticky;
     top: 0;
-    z-index: 1000; /* Increased z-index to ensure it's on top */
+    z-index: 1000;
 }
 
 header nav {
@@ -96,10 +95,27 @@ header .nav-links a:hover, header .nav-links a.active {
 }
 
 .cta-button:hover {
-    background: #45a049;
-    color: #fff !important; /* Override specificity */
-    border-bottom: 2px solid transparent !important;
+    background: var(--light-green);
+    color: #fff !important; 
 }
+
+/* Make the header button text always white */
+header .nav-links a.cta-button {
+    color: #fff;
+}
+
+/* Apply custom padding specifically to the header's CTA button */
+header .cta-button {
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+/* A more specific selector to override the default link hover effect */
+header .nav-links a.cta-button:hover {
+    background: var(--light-green);
+    border-bottom-color: transparent !important; /* Hides the peeking green line */
+}
+
 
 /* --- Hero Section --- */
 .hero {
@@ -169,7 +185,7 @@ header .nav-links a:hover, header .nav-links a.active {
 
 /* --- Timeline --- */
 .timeline-section {
-    background: var(--light-color);
+    background: var(--light-color); /* Tan accent */
     padding: 4rem 0;
 }
 .timeline {

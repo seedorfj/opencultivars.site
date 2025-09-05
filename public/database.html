@@ -3,11 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projects | OpenCultivars</title>
+    <title>Lab Notebook | OpenCultivars</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .construction-content {
+            text-align: center;
+            padding: 5rem 0;
+        }
+    </style>
 </head>
 <body>
 
@@ -39,30 +45,13 @@
 </header>
 
     <main class="container page-content">
-        <h1>Our Research Projects</h1>
-        <p>Below are the active citizen science projects you can follow or participate in. Each project has a unique set of goals and challenges, but all are driven by our shared passion for discovery.</p>
-        
-        <div class="project-cards" style="margin-top: 2rem;">
-            <a href="squash-project.html" class="card">
-                <img src="squash_thumb.jpg" alt="Several butternut squash stacked">
-                <h3>The Chromatic Squash Initiative</h3>
-                <p>Using mutation breeding to develop novel flesh colors (purple, blue, red) in *Cucurbita moschata* 'Honeypatch'.</p>
-                <span class="learn-more">View Project Details &rarr;</span>
-            </a>
-            <a href="litchi-tomato-project.html" class="card">
-                <img src="litchi_thumb.jpg" alt="Litchi tomato flowers on a spiny plant">
-                <h3>Litchi Tomato Domestication</h3>
-                <p>Working to remove spines, improve productivity, and retain disease resistance in the intriguing Litchi Tomato (*Solanum sisymbriifolium*).</p>
-                <span class="learn-more">View Project Details &rarr;</span>
-            </a>
+        <div class="construction-content">
+            <h1>Coming Soon!</h1>
+            <h2>The Lab Notebook is Under Construction</h2>
+            <p>We are busy setting up our open-access database where all project data, research notes, and volunteer observations will be published. Please check back later!</p>
         </div>
-
-        <article style="margin-top: 4rem;">
-            <h2>Future Projects</h2>
-            <p>Have an idea for a collaborative breeding project? Our community is always looking for the next challenge. Join the discussion on our Discord (link coming soon!) or get involved with one of our current projects to get started.</p>
-        </article>
     </main>
-
+    
     <footer>
     <div class="container">
         <p>&copy; 2025 Open Source Breeding Project. All rights reserved.</p>
@@ -72,7 +61,8 @@
     <script src="/script.js"></script>
     <script>
         navSlide();
-        document.querySelector('.nav-links a[href="/projects.html"]').classList.add('active');
+        // Set the active link in the header for the Lab Notebook
+        document.querySelector('.nav-links a[href="/database/"]').classList.add('active');
     </script>
 </body>
 </html>
