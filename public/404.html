@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found | OSBP</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Simple style to center the 404 content */
+        .not-found-content {
+            text-align: center;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="container">
+    <a href="index.html" class="logo">OpenCultivars🌱</a>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li class="dropdown">
+            <a href="projects.html">Projects &#9662;</a>
+            <ul class="dropdown-menu">
+                <li><a href="squash-project.html">Chromatic Squash Initiative</a></li>
+                <li><a href="litchi-tomato-project.html">Litchi Tomato Domestication</a></li>
+            </ul>
+        </li>
+        <li><a href="/database/">Lab Notebook</a></li>
+        <li><a href="https://discord.gg/Hcr8qvCm" class="cta-button">Join Discord</a></li>
+    </ul>
+    <div class="hamburger">
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+</nav>
+
+    <main class="container page-content">
+        <div class="not-found-content">
+            <h1>404</h1>
+            <h2>Page Not Found</h2>
+            <p>Looks like you've strayed from the cultivated path! The page you're looking for might have been moved or doesn't exist.</p>
+            <a href="/index.html" class="cta-button">Return to Homepage</a>
+        </div>
+    </main>
+
+    <div class="container">
+    <p>&copy; 2025 OpenCultivars. All rights reserved.</p>
+</div>
+
+
+    <script src="/script.js"></script>
+    <script>
+        // Function to load HTML templates
+        function loadTemplate(url, elementId, callback) {
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById(elementId).innerHTML = data;
+                    if (callback) callback();
+                });
+        }
+        // Load header and footer from the root directory
+        loadTemplate('/header.html', 'header-placeholder', () => {
+            navSlide(); 
+        });
+        loadTemplate('/footer.html', 'footer-placeholder');
+    </script>
+</body>
+</html>

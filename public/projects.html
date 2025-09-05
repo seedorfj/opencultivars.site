@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects | OpenCultivars</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="container">
+    <a href="index.html" class="logo">OpenCultivars🌱</a>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li class="dropdown">
+            <a href="projects.html">Projects &#9662;</a>
+            <ul class="dropdown-menu">
+                <li><a href="squash-project.html">Chromatic Squash Initiative</a></li>
+                <li><a href="litchi-tomato-project.html">Litchi Tomato Domestication</a></li>
+            </ul>
+        </li>
+        <li><a href="/database/">Lab Notebook</a></li>
+        <li><a href="https://discord.gg/Hcr8qvCm" class="cta-button">Join Discord</a></li>
+    </ul>
+    <div class="hamburger">
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+</nav>
+
+    <main class="container page-content">
+        <h1>Our Research Projects</h1>
+        <p>Below are the active citizen science projects you can follow or participate in. Each project has a unique set of goals and challenges, but all are driven by our shared passion for discovery.</p>
+        
+        <div class="project-cards" style="margin-top: 2rem;">
+            <div class="card">
+                <img src="squash_thumb.jpg" alt="Several butternut squash standing in a pile">
+                <h3>The Chromatic Squash Initiative</h3>
+                <p>Using mutation breeding to develop novel flesh colors (purple, blue, red) in *Cucurbita moschata* 'Honeypatch'.</p>
+                <a href="squash-project.html" class="learn-more">View Project Details &rarr;</a>
+            </div>
+            <div class="card">
+                <img src="litchi_thumb.jpg" alt="Litchi tomato flowers on a spiny plant">
+                <h3>Litchi Tomato Domestication</h3>
+                <p>Working to remove spines, improve productivity, and retain disease resistance in the intriguing Litchi Tomato (*Solanum sisymbriifolium*).</p>
+                <a href="litchi-tomato-project.html" class="learn-more">View Project Details &rarr;</a>
+            </div>
+        </div>
+
+        <article style="margin-top: 4rem;">
+            <h2>Future Projects</h2>
+            <p>Have an idea for a collaborative breeding project? Our community is always looking for the next challenge. Join the discussion on our Discord (link coming soon!) or get involved with one of our current projects to get started.</p>
+        </article>
+    </main>
+
+    <div class="container">
+    <p>&copy; 2025 OpenCultivars. All rights reserved.</p>
+</div>
+
+
+    <script src="script.js"></script>
+    <script>
+        function loadTemplate(url, elementId, callback) {
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById(elementId).innerHTML = data;
+                    if (callback) callback();
+                });
+        }
+        loadTemplate('header.html', 'header-placeholder', () => {
+            navSlide(); 
+            document.querySelector('a[href="projects.html"]').classList.add('active');
+        });
+        loadTemplate('footer.html', 'footer-placeholder');
+    </script>
+</body>
+</html>

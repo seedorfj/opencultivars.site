@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Litchi Tomato Domestication | OpenCultivars</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="container">
+    <a href="index.html" class="logo">OpenCultivars🌱</a>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li class="dropdown">
+            <a href="projects.html">Projects &#9662;</a>
+            <ul class="dropdown-menu">
+                <li><a href="squash-project.html">Chromatic Squash Initiative</a></li>
+                <li><a href="litchi-tomato-project.html">Litchi Tomato Domestication</a></li>
+            </ul>
+        </li>
+        <li><a href="/database/">Lab Notebook</a></li>
+        <li><a href="https://discord.gg/Hcr8qvCm" class="cta-button">Join Discord</a></li>
+    </ul>
+    <div class="hamburger">
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+</nav>
+
+    <main class="container page-content">
+        <h1>Litchi Tomato Domestication Project</h1>
+        <p><strong>Goal:</strong> To begin the domestication process for the Litchi Tomato (*Solanum sisymbriifolium*), focusing on eliminating its formidable spines while retaining disease resistance and improving productivity.</p>
+        
+        <article>
+            <h2>The Challenge & Opportunity</h2>
+            <p>The Litchi Tomato is a fascinating plant known for its incredible disease and pest resistance and tasty fruit. However, its dense covering of sharp spines makes it difficult to cultivate. This project aims to create a "garden-friendly" version through careful selection and breeding.</p>
+        </article>
+        
+        <article>
+            <h2>Methodology & Strategy</h2>
+            <p>Our approach is multi-faceted and will evolve over time:</p>
+            <ol>
+                <li><strong>Germplasm Collection:</strong> We are actively collecting a diverse set of genetics from various Litchi Tomato varieties. A broad genetic base is crucial for successful breeding.</li>
+                <li><strong>Varietal Identification:</strong> We will grow out all collected strains side-by-side to document their traits and identify the most promising candidates for our foundation stock.</li>
+                <li><strong>Hybridization (Experimental):</strong> We are considering attempting crosses with related spineless wild species, such as Turkey Berry (*Solanum torvum*), to introduce spineless genetics. This is a long-term, exploratory goal.</li>
+                <li><strong>Mutation Breeding (Future):</strong> Once we have established a strong base strain, we will explore mutation breeding to create new variations, including potentially spineless plants.</li>
+            </ol>
+        </article>
+
+        <article>
+            <h2>Current Status & How to Participate</h2>
+            <p><strong>We are preparing for our first major grow-out in the 2026 season!</strong></p>
+            <p>The initial phase of germplasm collection is nearing completion, and we are now seeking volunteers for our 2026 Varietal Identification Grow-Out. Participants will be sent seeds from one or more Litchi Tomato strains and asked to document key traits like spine density, productivity, flavor, and plant vigor. This data will be critical for selecting the best possible foundation for this long-term project.</p>
+        </article>
+    </main>
+
+    <div class="container">
+    <p>&copy; 2025 OpenCultivars. All rights reserved.</p>
+</div>
+
+
+    <script src="script.js"></script>
+    <script>
+        function loadTemplate(url, elementId, callback) {
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById(elementId).innerHTML = data;
+                    if (callback) callback();
+                });
+        }
+        loadTemplate('header.html', 'header-placeholder', () => {
+            navSlide(); 
+            document.querySelector('a[href="projects.html"]').classList.add('active');
+        });
+        loadTemplate('footer.html', 'footer-placeholder');
+    </script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenCultivars</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="container">
+    <a href="index.html" class="logo">OpenCultivars🌱</a>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li class="dropdown">
+            <a href="projects.html">Projects &#9662;</a>
+            <ul class="dropdown-menu">
+                <li><a href="squash-project.html">Chromatic Squash Initiative</a></li>
+                <li><a href="litchi-tomato-project.html">Litchi Tomato Domestication</a></li>
+            </ul>
+        </li>
+        <li><a href="/database/">Lab Notebook</a></li>
+        <li><a href="https://discord.gg/Hcr8qvCm" class="cta-button">Join Discord</a></li>
+    </ul>
+    <div class="hamburger">
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+</nav>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>Breeding the Future of Food, Together.</h1>
+                <p>A citizen science initiative to develop new and interesting plant varieties for the public good.</p>
+                <a href="projects.html" class="cta-button">Explore Our Projects</a>
+            </div>
+        </section>
+
+        <section class="projects-overview container">
+            <h2>Current Projects</h2>
+            <div class="project-cards">
+                <div class="card">
+                    <img src="squash_thumb.jpg" alt="Butternut squash cut in half">
+                    <h3>The Chromatic Squash Initiative</h3>
+                    <p>Using mutation breeding to develop novel flesh colors (purple, blue, red) in *Cucurbita moschata* 'Honeypatch'.</p>
+                    <a href="squash-project.html" class="learn-more">Learn More &rarr;</a>
+                </div>
+                <div class="card">
+                    <img src="litchi_thumb.jpg" alt="Litchi tomato fruit on a spiny plant">
+                    <h3>Litchi Tomato Domestication</h3>
+                    <p>Working to remove spines, improve productivity, and retain disease resistance in the intriguing Litchi Tomato (*Solanum sisymbriifolium*).</p>
+                    <a href="litchi-tomato-project.html" class="learn-more">Learn More &rarr;</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="timeline-section">
+            <div class="container">
+                <h2>Project Timeline</h2>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">Winter 2025-2026</div>
+                        <div class="timeline-content">
+                            <h4>Seed Irradiation</h4>
+                            <p>M1 seeds for the Chromatic Squash Initiative will be irradiated. We are seeking university partners.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2026 Season</div>
+                        <div class="timeline-content">
+                            <h4>First Major Grow-Outs</h4>
+                            <p><strong>Squash:</strong> Volunteers will grow the M1 generation plants to produce M2 seeds.</p>
+                            <p><strong>Litchi Tomato:</strong> We will grow out all collected varieties to identify natural variance and select the best strains for future breeding.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2027 Season</div>
+                        <div class="timeline-content">
+                            <h4>M2 Phenotype Hunt</h4>
+                            <p>A large-scale effort to grow the M2 squash generation and identify and document any interesting new traits.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="container">
+    <p>&copy; 2025 OpenCultivars. All rights reserved.</p>
+</div>
+
+
+    <script src="script.js"></script>
+    <script>
+        function loadTemplate(url, elementId, callback) {
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById(elementId).innerHTML = data;
+                    if (callback) callback();
+                });
+        }
+        loadTemplate('header.html', 'header-placeholder', () => {
+            navSlide(); 
+            document.querySelector('a[href="index.html"]').classList.add('active');
+        });
+        loadTemplate('footer.html', 'footer-placeholder');
+    </script>
+</body>
+</html>
