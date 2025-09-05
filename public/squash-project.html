@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chromatic Squash Initiative | OpenCultivars</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
@@ -12,15 +12,15 @@
 <body>
 
     <nav class="container">
-    <a href="index.html" class="logo">OpenCultivars🌱</a>
+    <a href="/index.html" class="logo">OpenCultivars🌱</a>
     <ul class="nav-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="about.html">About</a></li>
+        <li><a href="/index.html">Home</a></li>
+        <li><a href="/about.html">About</a></li>
         <li class="dropdown">
-            <a href="projects.html">Projects &#9662;</a>
+            <a href="/projects.html">Projects &#9662;</a>
             <ul class="dropdown-menu">
-                <li><a href="squash-project.html">Chromatic Squash Initiative</a></li>
-                <li><a href="litchi-tomato-project.html">Litchi Tomato Domestication</a></li>
+                <li><a href="/squash-project.html">Chromatic Squash Initiative</a></li>
+                <li><a href="/litchi-tomato-project.html">Litchi Tomato Domestication</a></li>
             </ul>
         </li>
         <li><a href="/database/">Lab Notebook</a></li>
@@ -80,11 +80,11 @@
                     if (callback) callback();
                 });
         }
-        loadTemplate('header.html', 'header-placeholder', () => {
+        loadTemplate('/header.html', 'header-placeholder', () => {
             navSlide(); 
             document.querySelector('a[href="projects.html"]').classList.add('active');
         });
-        loadTemplate('footer.html', 'footer-placeholder');
+        loadTemplate('/footer.html', 'footer-placeholder');
     </script>
 </body>
 </html>
