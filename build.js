@@ -36,4 +36,27 @@ fs.readdirSync(srcDir)
     console.log(`Copied: ${file}`);
 });
 
+// Recursively copy a directory
+function copyDirSync(src, dest) {
+    if (!fs.existsSync(dest)) {
+        fs.mkdirSync(dest, { recursive: true });
+    }
+    fs.readdirSync(src).forEach(entry => {
+        const srcPath = path.join(src, entry);
+        const destPath = path.join(dest, entry);
+        if (fs.statSync(srcPath).isDirectory()) {
+            copyDirSync(srcPath, destPath);
+        } else {
+            fs.copyFileSync(srcPath, destPath);
+        }
+    });
+}
+
+// Copy publications directory
+const pubSrc = path.join(srcDir, 'publications');
+if (fs.existsSync(pubSrc)) {
+    copyDirSync(pubSrc, path.join(distDir, 'publications'));
+    console.log('Copied: publications/');
+}
+
 console.log('\nBuild complete!');

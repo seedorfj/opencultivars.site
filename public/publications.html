@@ -3,18 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lab Notebook | OpenCultivars</title>
+    <meta name="description" content="Browse publications from the OpenCultivars project, including defensive disclosures and prior art analyses for open-source plant breeding.">
+    <title>Publications | OpenCultivars</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        .construction-content {
-            text-align: center;
-            padding: 5rem 0;
-        }
-    </style>
 </head>
 <body>
 
@@ -47,13 +42,23 @@
 </header>
 
     <main class="container page-content">
-        <div class="construction-content">
-            <h1>Coming Soon!</h1>
-            <h2>The Lab Notebook is Under Construction</h2>
-            <p>We are busy setting up our open-access database where all project data, research notes, and volunteer observations will be published. Please check back later!</p>
+        <h1>Publications</h1>
+        <p>Defensive disclosures, prior art analyses, and technical documents published by the OpenCultivars community. All publications are released to establish prior art and keep plant genetics open-source.</p>
+
+        <div class="pub-cards" style="margin-top: 2rem;">
+            <a href="anthocyanin-myb-publication.html" class="card pub-card">
+                <div class="pub-card-badge">Defensive Disclosure</div>
+                <h3>Cisgenic Anthocyanin Enhancement via MYB Transcription Factors</h3>
+                <p>A defensive publication establishing prior art for fruit-specific anthocyanin upregulation using endogenous MYB/ANT1 genes and ripening-specific promoters across edible crop species.</p>
+                <div class="pub-card-meta">
+                    <span class="pub-date">March 30, 2026</span>
+                    <span class="pub-docs-count">3 documents</span>
+                </div>
+                <span class="learn-more">View Publication &rarr;</span>
+            </a>
         </div>
     </main>
-    
+
     <footer>
     <div class="container">
         <p>&copy; 2026 Open Source Breeding Project. All rights reserved.</p>
@@ -63,8 +68,7 @@
     <script src="/script.js"></script>
     <script>
         navSlide();
-        // Set the active link in the header for the Lab Notebook
-        document.querySelector('.nav-links a[href="/database/"]').classList.add('active');
+        document.querySelector('.nav-links a[href="/publications.html"]').classList.add('active');
     </script>
 </body>
 </html>

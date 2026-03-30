@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Defensive publication for cisgenic, fruit-specific anthocyanin enhancement using MYB transcription factors in edible crops. Includes prior art analysis and publication strategy.">
+    <title>Anthocyanin MYB Defensive Publication | OpenCultivars</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header id="header-placeholder"></header>
+
+    <main class="container page-content">
+        <a href="/publications.html" class="pub-back-link">&larr; All Publications</a>
+
+        <h1>Cisgenic Anthocyanin Enhancement via MYB Transcription Factors</h1>
+        <p class="pub-subtitle">Defensive Disclosure &mdash; March 30, 2026</p>
+
+        <div class="pub-abstract">
+            <h2>Abstract</h2>
+            <p>This defensive publication establishes prior art for a cisgenic, fruit-specific anthocyanin enhancement system in tomatoes and other edible crops. The approach uses endogenous MYB/ANT1 transcription factors driven by ripening-specific promoters (e.g., E8) to upregulate anthocyanin biosynthesis exclusively in fruit tissue. By disclosing this system publicly, we ensure these cisgenic genetics remain freely available for breeders and the open-source community.</p>
+        </div>
+
+        <section class="pub-viewer-section">
+            <h2>Defensive Publication</h2>
+            <div class="pub-viewer">
+                <iframe
+                    id="main-pdf-viewer"
+                    src="/publications/OpenCultivars_Defensive_Pub_Anthocyanin_MYB_20260330.pdf"
+                    title="Defensive Publication - Cisgenic Anthocyanin Enhancement via MYB Transcription Factors"
+                    loading="lazy">
+                </iframe>
+            </div>
+        </section>
+
+        <section class="pub-supporting-section">
+            <h2>Supporting Documents</h2>
+            <p>Click to view the supplementary materials for this publication package.</p>
+            <div class="pub-supporting-docs">
+                <button class="pub-btn" onclick="openModal('prior-art-modal')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    Prior Art Analysis
+                </button>
+                <button class="pub-btn" onclick="openModal('strategy-modal')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    Publication Strategy
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Prior Art Modal -->
+    <div id="prior-art-modal" class="modal-overlay" onclick="closeModalOnBackdrop(event, 'prior-art-modal')">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Prior Art Analysis</h3>
+                <button class="modal-close" onclick="closeModal('prior-art-modal')" aria-label="Close">&times;</button>
+            </div>
+            <iframe
+                class="modal-pdf"
+                src=""
+                data-src="/publications/OpenCultivars_Prior_Art_Anthocyanin_MYB_20260330.pdf"
+                title="Prior Art Analysis - Anthocyanin MYB"
+                loading="lazy">
+            </iframe>
+        </div>
+    </div>
+
+    <!-- Publication Strategy Modal -->
+    <div id="strategy-modal" class="modal-overlay" onclick="closeModalOnBackdrop(event, 'strategy-modal')">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Publication Strategy</h3>
+                <button class="modal-close" onclick="closeModal('strategy-modal')" aria-label="Close">&times;</button>
+            </div>
+            <iframe
+                class="modal-pdf"
+                src=""
+                data-src="/publications/OpenCultivars_Pub_Strategy_Anthocyanin_MYB_20260330.pdf"
+                title="Publication Strategy - Anthocyanin MYB"
+                loading="lazy">
+            </iframe>
+        </div>
+    </div>
+
+    <footer id="footer-placeholder"></footer>
+
+    <script src="/script.js"></script>
+    <script>
+        navSlide();
+        document.querySelector('.nav-links a[href="/publications.html"]').classList.add('active');
+
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            const iframe = modal.querySelector('.modal-pdf');
+            // Lazy-load the PDF only when the modal is first opened
+            if (iframe.dataset.src) {
+                iframe.src = iframe.dataset.src;
+                delete iframe.dataset.src;
+            }
+            modal.classList.add('modal-active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('modal-active');
+            document.body.style.overflow = '';
+        }
+
+        function closeModalOnBackdrop(event, id) {
+            if (event.target === event.currentTarget) {
+                closeModal(id);
+            }
+        }
+
+        // Close on ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.modal-active').forEach(function(modal) {
+                    modal.classList.remove('modal-active');
+                });
+                document.body.style.overflow = '';
+            }
+        });
+    </script>
+</body>
+</html>
