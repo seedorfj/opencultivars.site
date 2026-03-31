@@ -31,7 +31,7 @@ fs.readdirSync(srcDir)
     });
 
 // Copy non-HTML assets (CSS, JS, images) to the output directory
-['style.css', 'script.js', 'litchi_thumb.jpg', 'squash_thumb.jpg', 'robots.txt', 'sitemap.xml','favicon.svg','logo.svg'].forEach(file => {
+['style.css', 'script.js', 'litchi_thumb.jpg', 'squash_thumb.jpg', 'purple_tomato_thumb.png', 'robots.txt', 'sitemap.xml','favicon.svg','logo.svg'].forEach(file => {
     fs.copyFileSync(path.join(srcDir, file), path.join(distDir, file));
     console.log(`Copied: ${file}`);
 });
