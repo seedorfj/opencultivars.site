@@ -1,6 +1,14 @@
-# Allow all crawlers access to the site
-User-agent: *
-Disallow: /database/
+# OpenCultivars robots.txt
+# https://opencultivars.org
 
-# Point crawlers to the sitemap
+User-agent: *
+Allow: /
+
+# Don't index under-construction pages
+Disallow: /database.html
+
+# Don't index the raw publication PDFs (they're viewed through our pages)
+Disallow: /publications/*.pdf
+
+# Sitemap location
 Sitemap: https://opencultivars.org/sitemap.xml
