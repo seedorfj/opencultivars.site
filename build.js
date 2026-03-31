@@ -36,6 +36,13 @@ fs.readdirSync(srcDir)
     console.log(`Copied: ${file}`);
 });
 
+// Copy images directory
+const imgSrc = path.join(srcDir, 'images');
+if (fs.existsSync(imgSrc)) {
+    copyDirSync(imgSrc, path.join(distDir, 'images'));
+    console.log('Copied: images/');
+}
+
 // Recursively copy a directory
 function copyDirSync(src, dest) {
     if (!fs.existsSync(dest)) {
