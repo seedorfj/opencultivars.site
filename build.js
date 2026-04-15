@@ -13,6 +13,12 @@ const imageConfig = {
         quality: 80,
         files: ['squash_thumb.jpg', 'litchi_thumb.jpg', 'purple_tomato_thumb.png']
     },
+    // Hero banner — 1920px wide covers full-width desktop at 1x
+    hero: {
+        width: 1920,
+        quality: 82,
+        files: ['hero_seedlings.png']
+    },
     // Headshot is displayed larger, 500px wide is plenty
     headshots: {
         width: 500,
